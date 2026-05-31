@@ -7,6 +7,7 @@ using RealityLog.Camera;
 using RealityLog.Common;
 using RealityLog.Depth;
 using RealityLog.OVR;
+using RealityLog.Streaming;
 
 namespace RealityLog
 {
@@ -29,8 +30,12 @@ namespace RealityLog
         [Tooltip("Manages FPS timing for synchronized capture")]
         [SerializeField] private CaptureTimer captureTimer = default!;
 
+        [Tooltip("Optional: Streams live sensor packets to the workstation while recording.")]
+        [SerializeField] private OpenQuestCaptureStreamer streamSender = default!;
+
         [Header("Recording Settings")]
         [SerializeField] private bool generateTimestampedDirectories = true;
+        [SerializeField] private bool streamWhileRecording = true;
 
         [Header("Events")]
         [Tooltip("Invoked when recording stops and files are saved. Passes the directory name where files were saved.")]
@@ -42,6 +47,7 @@ namespace RealityLog
         private bool isRecording = false;
         private float recordingStartTime = 0f;
         private string? currentSessionDirectory = null;
+        private OpenQuestCaptureStreamer? resolvedStreamSender = null;
 
         public bool IsRecording => isRecording;
         
@@ -83,6 +89,7 @@ namespace RealityLog
             }
 
             Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: Starting recording session '{currentSessionDirectory}'");
+            StartStreamingIfNeeded();
 
             // Step 1: Update camera paths for new session
             // This ensures format info and images are written to the new directory
@@ -135,6 +142,7 @@ namespace RealityLog
             // Stop in reverse order
             // Step 1: Stop capture loop first
             captureTimer.StopCapture();
+            StopStreamingIfNeeded();
 
             // Step 2: Close file writers and cleanup
             depthMapExporter.StopExport();
@@ -186,12 +194,62 @@ namespace RealityLog
                 Debug.LogWarning($"[{Constants.LOG_TAG}] RecordingManager: Missing CaptureTimer reference!");
         }
 
+        private void StartStreamingIfNeeded()
+        {
+            if (!streamWhileRecording)
+            {
+                return;
+            }
+
+            ResolveStreamSender(createIfMissing: true)?.StartStreaming();
+        }
+
+        private void StopStreamingIfNeeded()
+        {
+            if (!streamWhileRecording)
+            {
+                return;
+            }
+
+            ResolveStreamSender(createIfMissing: false)?.StopStreaming();
+        }
+
+        private OpenQuestCaptureStreamer? ResolveStreamSender(bool createIfMissing)
+        {
+            if (resolvedStreamSender != null)
+            {
+                return resolvedStreamSender;
+            }
+
+            if (streamSender != null)
+            {
+                resolvedStreamSender = streamSender;
+                return resolvedStreamSender;
+            }
+
+            resolvedStreamSender = FindObjectOfType<OpenQuestCaptureStreamer>();
+            if (resolvedStreamSender != null)
+            {
+                return resolvedStreamSender;
+            }
+
+            if (!createIfMissing)
+            {
+                return null;
+            }
+
+            var streamObject = new GameObject("OpenQuestCaptureStreamer");
+            resolvedStreamSender = streamObject.AddComponent<OpenQuestCaptureStreamer>();
+            return resolvedStreamSender;
+        }
+
         private void OnDestroy()
         {
             // Safety: ensure recording stops on cleanup
             if (isRecording)
                 StopRecording();
+            else
+                StopStreamingIfNeeded();
         }
     }
 }
-

@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Android;
 using RealityLog.Common;
 using RealityLog.IO;
+using RealityLog.Streaming;
 
 namespace RealityLog.Depth
 {
@@ -31,10 +32,14 @@ namespace RealityLog.Depth
         [Header("Synchronized Capture")]
         [Tooltip("Required: Reference to CaptureTimer for FPS-based capture timing.")]
         [SerializeField] private CaptureTimer captureTimer = default!;
+        [Header("Streaming")]
+        [Tooltip("Optional: Sends the left camera pose as a standalone QuestStreamer pose packet.")]
+        [SerializeField] private OpenQuestCaptureStreamer poseStreamer = default!;
 
         private DepthDataExtractor? depthDataExtractor;
 
         private DepthRenderTextureExporter? renderTextureExporter;
+        private OpenQuestCaptureStreamer? resolvedPoseStreamer;
         private CsvWriter? leftDepthCsvWriter;
         private CsvWriter? rightDepthCsvWriter;
 
@@ -91,6 +96,7 @@ namespace RealityLog.Depth
 
             depthDataExtractor = new();
             renderTextureExporter = new(copyDepthMapShader);
+            resolvedPoseStreamer = poseStreamer != null ? poseStreamer : FindObjectOfType<OpenQuestCaptureStreamer>();
 
             Permission.RequestUserPermission(OVRPermissionsRequester.ScenePermission);
 
@@ -220,6 +226,7 @@ namespace RealityLog.Depth
 
                     if (i == 0)
                     {
+                        SendLeftCameraPose(frameDesc);
                         leftDepthCsvWriter?.EnqueueRow(row);
                     }
                     else
@@ -230,6 +237,21 @@ namespace RealityLog.Depth
             } else {
                 Debug.LogError("Failed to get updated depth texture.");
             }
+        }
+
+        private void SendLeftCameraPose(DepthFrameDesc frameDesc)
+        {
+            if (resolvedPoseStreamer == null)
+            {
+                resolvedPoseStreamer = poseStreamer != null
+                    ? poseStreamer
+                    : FindObjectOfType<OpenQuestCaptureStreamer>();
+            }
+
+            resolvedPoseStreamer?.SendLeftCameraPose(
+                frameDesc.timestampNs,
+                frameDesc.createPoseLocation,
+                frameDesc.createPoseRotation);
         }
 
         private long ConvertTimestampNsToUnixTimeMs(long timestampNs)
