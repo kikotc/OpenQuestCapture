@@ -22,6 +22,12 @@ namespace RealityLog.Streaming
         [SerializeField] private bool startOnEnable = false;
         [SerializeField] private bool sendStartupStatus = true;
 
+        [Header("HMD Pose Streaming")]
+        [Tooltip("Stream left camera pose derived from HMD tracking at Update rate (~50 Hz).")]
+        [SerializeField] private bool streamHmdPose = true;
+        [Tooltip("Fixed offset from HMD center to left camera in HMD local space (meters).")]
+        [SerializeField] private Vector3 leftCameraExtrinsics = new Vector3(-0.032f, -0.018f, -0.062f);
+
         private QuestStreamUdpSender? sender;
 
         public bool IsStreaming => sender?.IsOpen ?? false;
@@ -36,6 +42,27 @@ namespace RealityLog.Streaming
         {
             get => port;
             set => port = value;
+        }
+
+        private void Update()
+        {
+            if (!IsStreaming || !streamHmdPose)
+            {
+                return;
+            }
+
+            var cam = Camera.main;
+            if (cam == null)
+            {
+                return;
+            }
+
+            var hmdPos = cam.transform.position;
+            var hmdRot = cam.transform.rotation;
+            var leftCamPos = hmdPos + hmdRot * leftCameraExtrinsics;
+            var timestampNs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000L;
+
+            SendLeftCameraPose(timestampNs, leftCamPos, hmdRot);
         }
 
         private void OnEnable()
