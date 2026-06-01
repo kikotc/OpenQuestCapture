@@ -26,7 +26,7 @@ namespace RealityLog.IO
             kernel = this.computeShader.FindKernel("CopyRT");
         }
 
-        public void Export(RenderTexture sourceRT, string leftDepthOutputPath, string rightDepthOutputPath)
+        public void Export(RenderTexture sourceRT, string leftDepthOutputPath, string rightDepthOutputPath, Action<NativeArray<float>>? onLeftEyeData = null)
         {
             if (isDisposed)
             {
@@ -57,7 +57,7 @@ namespace RealityLog.IO
             int groupsY = Mathf.CeilToInt(height / 8f);
             computeShader.Dispatch(kernel, groupsX, groupsY, 1);
 
-            RequestGPUReadbackAndSave(leftEyeBuffer, leftDepthOutputPath);
+            RequestGPUReadbackAndSave(leftEyeBuffer, leftDepthOutputPath, onLeftEyeData);
             RequestGPUReadbackAndSave(rightEyeBuffer, rightDepthOutputPath);
         }
 
@@ -116,7 +116,7 @@ namespace RealityLog.IO
             }
         }
 
-        private void RequestGPUReadbackAndSave(GraphicsBuffer buffer, string outputPath)
+        private void RequestGPUReadbackAndSave(GraphicsBuffer buffer, string outputPath, Action<NativeArray<float>>? onData = null)
         {
             AsyncGPUReadback.Request(buffer, request =>
             {
@@ -128,6 +128,9 @@ namespace RealityLog.IO
                 }
 
                 var data = request.GetData<float>();
+
+                // Invoke before SaveAsRaw so NativeArray is still valid
+                onData?.Invoke(data);
 
                 SaveAsRaw(data, outputPath, () => ReturnBuffer(buffer));
             });

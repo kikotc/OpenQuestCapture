@@ -131,6 +131,25 @@ namespace RealityLog.Streaming
             sender?.SendStatus(message);
         }
 
+        public void SendDepthFrame(long timestampNs, float nearZ, float farZ, byte[] depthUint16, int width, int height)
+        {
+            if (sender == null) return;
+
+            // Payload: nearZ (4 bytes LE float) + farZ (4 bytes LE float) + uint16 depth data
+            var payload = new byte[8 + depthUint16.Length];
+            Buffer.BlockCopy(BitConverter.GetBytes(nearZ), 0, payload, 0, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(farZ),  0, payload, 4, 4);
+            Buffer.BlockCopy(depthUint16, 0, payload, 8, depthUint16.Length);
+
+            sender.SendPayload(
+                QuestStreamUdpSender.StreamType.Depth,
+                QuestStreamUdpSender.PayloadFormat.DepthUint16OpenXrZ,
+                (ulong)timestampNs,
+                (ushort)width,
+                (ushort)height,
+                payload);
+        }
+
         public void SendLeftCameraPose(long timestampNs, Vector3 position, Quaternion orientation)
         {
             if (sender == null || timestampNs <= 0)

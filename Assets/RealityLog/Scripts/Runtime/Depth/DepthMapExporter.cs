@@ -35,6 +35,8 @@ namespace RealityLog.Depth
         [Header("Streaming")]
         [Tooltip("Optional: Sends the left camera pose as a standalone QuestStreamer pose packet.")]
         [SerializeField] private OpenQuestCaptureStreamer poseStreamer = default!;
+        [Tooltip("Stream left eye depth over UDP as uint16 OpenXR window-depth with nearZ/farZ prefix.")]
+        [SerializeField] private bool streamDepth = true;
 
         private DepthDataExtractor? depthDataExtractor;
 
@@ -203,7 +205,28 @@ namespace RealityLog.Depth
                 var leftDepthFilePath = Path.Join(Application.persistentDataPath, DirectoryName, $"{leftDepthMapDirectoryName}/{unixTime}.raw");
                 var rightDepthFilePath = Path.Join(Application.persistentDataPath, DirectoryName, $"{rightDepthMapDirectoryName}/{unixTime}.raw");
 
-                renderTextureExporter.Export(renderTexture, leftDepthFilePath, rightDepthFilePath);
+                // Build depth streaming callback if streamer is active
+                Action<Unity.Collections.NativeArray<float>>? depthStreamCallback = null;
+                if (streamDepth && resolvedPoseStreamer != null && resolvedPoseStreamer.IsStreaming)
+                {
+                    var leftDesc = frameDescriptors[0];
+                    var capturedWidth = width;
+                    var capturedHeight = height;
+                    var capturedStreamer = resolvedPoseStreamer;
+                    depthStreamCallback = (floatData) =>
+                    {
+                        var uint16Bytes = new byte[floatData.Length * 2];
+                        for (int i = 0; i < floatData.Length; i++)
+                        {
+                            ushort val = (ushort)(Mathf.Clamp01(floatData[i]) * 65535f);
+                            uint16Bytes[i * 2]     = (byte)(val & 0xFF);
+                            uint16Bytes[i * 2 + 1] = (byte)(val >> 8);
+                        }
+                        capturedStreamer.SendDepthFrame(leftDesc.timestampNs, leftDesc.nearZ, leftDesc.farZ, uint16Bytes, capturedWidth, capturedHeight);
+                    };
+                }
+
+                renderTextureExporter.Export(renderTexture, leftDepthFilePath, rightDepthFilePath, depthStreamCallback);
 
                 for (var i = 0; i < FRAME_DESC_COUNT; ++i)
                 {
