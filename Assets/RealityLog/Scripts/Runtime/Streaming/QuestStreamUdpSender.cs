@@ -21,7 +21,8 @@ namespace RealityLog.Streaming
         {
             Utf8 = 1,
             CameraI420 = 10,
-            CameraH264 = 11,
+            CameraH265 = 11,
+            CameraH264 = 12,
             PoseOpenXrBinary = 20,
             DepthFloat32Meters = 30,
             DepthUint16Millimeters = 31,

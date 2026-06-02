@@ -7258,6 +7258,7 @@ GameObject:
   - component: {fileID: 918867449}
   - component: {fileID: 918867451}
   - component: {fileID: 918867450}
+  - component: {fileID: 918867452}
   m_Layer: 0
   m_Name: LeftCamera
   m_TagString: Untagged
@@ -7313,6 +7314,7 @@ MonoBehaviour:
   cameraPermissionManager: {fileID: 1942360064}
   surfaceProviders:
   - {fileID: 918867450}
+  - {fileID: 918867452}
   cameraPosition: 0
   useCase: 1
 --- !u!1 &990090417
@@ -11773,3 +11775,18 @@ SceneRoots:
   - {fileID: 1104910058}
   - {fileID: 1186443526}
   - {fileID: 162001332}
+--- !u!114 &918867452
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 918867448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c3d4e5f6a7890123456789abcdef02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fps: 15
+  bitrateBps: 2000000
+  streamer: {fileID: 0}

@@ -168,5 +168,18 @@ namespace RealityLog.Streaming
                 position.y,
                 position.z);
         }
+
+        public void SendRgbFrame(long timestampNs, byte[] nalData, int width, int height)
+        {
+            if (sender == null || nalData == null || nalData.Length == 0) return;
+
+            sender.SendPayload(
+                QuestStreamUdpSender.StreamType.Camera,
+                QuestStreamUdpSender.PayloadFormat.CameraH264,
+                (ulong)timestampNs,
+                (ushort)width,
+                (ushort)height,
+                nalData);
+        }
     }
 }
