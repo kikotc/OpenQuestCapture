@@ -157,8 +157,7 @@ namespace RealityLog.Streaming
                 return;
             }
 
-            // Convert OpenXR (Y-up, Z-back) to camera optical (Y-down, Z-forward) convention
-            // required by the Hydra/ROS backend. Flip Y and Z on position; flip qx and qz.
+            // Reflect Y axis for both parent and child frames to match Hydra coordinate system.
             sender.SendOpenXrPose(
                 (ulong) timestampNs,
                 DefaultOpenXrPoseLocationFlags,
@@ -168,7 +167,7 @@ namespace RealityLog.Streaming
                  orientation.w,
                  position.x,
                 -position.y,
-                -position.z);
+                 position.z);
         }
 
         public void SendRgbFrame(long timestampNs, byte[] nalData, int width, int height)
