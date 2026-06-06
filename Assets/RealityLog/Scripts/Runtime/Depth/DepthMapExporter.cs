@@ -222,7 +222,8 @@ namespace RealityLog.Depth
                             uint16Bytes[i * 2]     = (byte)(val & 0xFF);
                             uint16Bytes[i * 2 + 1] = (byte)(val >> 8);
                         }
-                        capturedStreamer.SendDepthFrame(leftDesc.timestampNs, leftDesc.nearZ, leftDesc.farZ, uint16Bytes, capturedWidth, capturedHeight);
+                        var payload = BuildDepthPayload(leftDesc, uint16Bytes, capturedWidth, capturedHeight);
+                        capturedStreamer.SendDepthFrame(leftDesc.timestampNs, payload, capturedWidth, capturedHeight);
                     };
                 }
 
@@ -281,6 +282,94 @@ namespace RealityLog.Depth
         {
             var deltaMs = (long) (timestampNs / 1.0e6 - baseOvrTimeSec * 1000.0);
             return baseUnixTimeMs + deltaMs;
+        }
+
+        private static byte[] BuildDepthPayload(DepthFrameDesc desc, byte[] uint16Pixels, int width, int height)
+        {
+            const uint   DepthMagic  = 0x50445351u;
+            const ushort Version     = 1;
+            const ushort ViewCount   = 1;
+            const ushort Flags       = 0;
+            const int    PrefixSize  = 36;
+            const int    ViewSize    = 48;
+            const int    HeaderSize  = PrefixSize + ViewSize; // 84
+            const uint   ImageOffset = HeaderSize;
+
+            // Convert OpenXR (Y-up, Z-back) to quest_corrected_hydra_optical.
+            float px =  desc.createPoseLocation.x;
+            float py = -desc.createPoseLocation.y;
+            float pz = -desc.createPoseLocation.z;
+            float qx =  desc.createPoseRotation.x;
+            float qy = -desc.createPoseRotation.y;
+            float qz = -desc.createPoseRotation.z;
+            float qw =  desc.createPoseRotation.w;
+
+            // DepthFrameDesc stores Tan(Abs(angle)); restore signed radian angles.
+            // In OpenXR: angleLeft < 0, angleRight > 0, angleUp > 0, angleDown < 0.
+            float angleLeft  = -Mathf.Atan(desc.fovLeftAngleTangent);
+            float angleRight =  Mathf.Atan(desc.fovRightAngleTangent);
+            float angleUp    =  Mathf.Atan(desc.fovTopAngleTangent);
+            float angleDown  = -Mathf.Atan(desc.fovDownAngleTangent);
+
+            var buf = new byte[HeaderSize + uint16Pixels.Length];
+            int o = 0;
+
+            // DEPTH_HEADER_PREFIX  (struct "<IHHHHIIQff", 36 bytes)
+            WriteU32(buf, ref o, DepthMagic);
+            WriteU16(buf, ref o, Version);
+            WriteU16(buf, ref o, (ushort)HeaderSize);   // header_bytes
+            WriteU16(buf, ref o, ViewCount);
+            WriteU16(buf, ref o, Flags);
+            WriteU32(buf, ref o, (uint)width);
+            WriteU32(buf, ref o, (uint)height);
+            WriteU64(buf, ref o, (ulong)desc.timestampNs);
+            WriteF32(buf, ref o, desc.nearZ);
+            WriteF32(buf, ref o, desc.farZ);
+
+            // DEPTH_VIEW_HEADER  (struct "<fffffffffffI", 48 bytes, left view)
+            WriteF32(buf, ref o, angleLeft);
+            WriteF32(buf, ref o, angleRight);
+            WriteF32(buf, ref o, angleUp);
+            WriteF32(buf, ref o, angleDown);
+            WriteF32(buf, ref o, qx);
+            WriteF32(buf, ref o, qy);
+            WriteF32(buf, ref o, qz);
+            WriteF32(buf, ref o, qw);
+            WriteF32(buf, ref o, px);
+            WriteF32(buf, ref o, py);
+            WriteF32(buf, ref o, pz);
+            WriteU32(buf, ref o, ImageOffset);
+
+            Buffer.BlockCopy(uint16Pixels, 0, buf, HeaderSize, uint16Pixels.Length);
+            return buf;
+        }
+
+        private static void WriteU16(byte[] buf, ref int o, ushort v)
+        {
+            buf[o++] = (byte)(v & 0xff);
+            buf[o++] = (byte)((v >> 8) & 0xff);
+        }
+
+        private static void WriteU32(byte[] buf, ref int o, uint v)
+        {
+            buf[o++] = (byte)(v & 0xff);
+            buf[o++] = (byte)((v >> 8) & 0xff);
+            buf[o++] = (byte)((v >> 16) & 0xff);
+            buf[o++] = (byte)((v >> 24) & 0xff);
+        }
+
+        private static void WriteU64(byte[] buf, ref int o, ulong v)
+        {
+            WriteU32(buf, ref o, (uint)(v & 0xfffffffful));
+            WriteU32(buf, ref o, (uint)((v >> 32) & 0xfffffffful));
+        }
+
+        private static void WriteF32(byte[] buf, ref int o, float v)
+        {
+            var bytes = BitConverter.GetBytes(v);
+            if (!BitConverter.IsLittleEndian) Array.Reverse(bytes);
+            Buffer.BlockCopy(bytes, 0, buf, o, 4);
+            o += 4;
         }
 
 #if UNITY_EDITOR

@@ -57,6 +57,16 @@ namespace RealityLog.Streaming
                 return;
             }
 
+            // HIGH-RATE POSE STREAM (~50 Hz, wall-clock timestamp)
+            // This is a second pose stream running alongside the depth-cadence pose sent by
+            // DepthMapExporter. Both use the same POSE_OPENXR_BINARY format and StreamType.Pose.
+            // The backend synchronizer uses closest-timestamp matching, so:
+            //   - depth frames will match the depth-cadence pose (exact timestamp)
+            //   - RGB frames will match whichever pose is nearest in time (likely this stream)
+            // Left camera position is derived from the HMD tracking pose plus the known
+            // physical offset. Orientation is the HMD orientation directly — the Quest 3
+            // passthrough cameras share the same optical axis as the HMD center (offset only,
+            // no rotation), so hmdRot is the correct left-camera orientation.
             var hmdPos = cam.transform.position;
             var hmdRot = cam.transform.rotation;
             var leftCamPos = hmdPos + hmdRot * leftCameraExtrinsics;
@@ -131,16 +141,9 @@ namespace RealityLog.Streaming
             sender?.SendStatus(message);
         }
 
-        public void SendDepthFrame(long timestampNs, float nearZ, float farZ, byte[] depthUint16, int width, int height)
+        public void SendDepthFrame(long timestampNs, byte[] payload, int width, int height)
         {
             if (sender == null) return;
-
-            // Payload: nearZ (4 bytes LE float) + farZ (4 bytes LE float) + uint16 depth data
-            var payload = new byte[8 + depthUint16.Length];
-            Buffer.BlockCopy(BitConverter.GetBytes(nearZ), 0, payload, 0, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(farZ),  0, payload, 4, 4);
-            Buffer.BlockCopy(depthUint16, 0, payload, 8, depthUint16.Length);
-
             sender.SendPayload(
                 QuestStreamUdpSender.StreamType.Depth,
                 QuestStreamUdpSender.PayloadFormat.DepthUint16OpenXrZ,
@@ -157,17 +160,18 @@ namespace RealityLog.Streaming
                 return;
             }
 
-            // Reflect Y axis for both parent and child frames to match Hydra coordinate system.
+            // Convert OpenXR (Y-up, Z-back) to Hydra optical convention (Y-down, Z-forward).
+            // Negate Y and Z on position; negate qy and qz on quaternion.
             sender.SendOpenXrPose(
                 (ulong) timestampNs,
                 DefaultOpenXrPoseLocationFlags,
-                -orientation.x,
-                 orientation.y,
+                 orientation.x,
+                -orientation.y,
                 -orientation.z,
                  orientation.w,
                  position.x,
                 -position.y,
-                 position.z);
+                -position.z);
         }
 
         public void SendRgbFrame(long timestampNs, byte[] nalData, int width, int height)
