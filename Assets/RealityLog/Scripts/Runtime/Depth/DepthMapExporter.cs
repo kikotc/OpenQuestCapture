@@ -34,7 +34,7 @@ namespace RealityLog.Depth
         [SerializeField] private CaptureTimer captureTimer = default!;
         [Header("Streaming")]
         [Tooltip("Optional: Sends the left camera pose as a standalone QuestStreamer pose packet.")]
-        [SerializeField] private OpenQuestCaptureStreamer poseStreamer = default!;
+        [SerializeField] private OpenQuestCaptureStreamer? poseStreamer = null;
         [Tooltip("Stream left eye depth over UDP as uint16 OpenXR window-depth with nearZ/farZ prefix.")]
         [SerializeField] private bool streamDepth = true;
 
@@ -169,8 +169,7 @@ namespace RealityLog.Depth
                 return;
             }
             
-            // Debug: Log when we're about to capture
-            Debug.Log($"[DepthExporter] Capturing depth at Unity time={Time.unscaledTime:F3}s");
+            Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter - capturing depth at Unity time={Time.unscaledTime:F3}s");
 
             if (!hasScenePermission)
             {
@@ -186,10 +185,10 @@ namespace RealityLog.Depth
                 }
             }
 
+            if (!depthSystemReady) return;
+
             if (depthDataExtractor.TryGetUpdatedDepthTexture(out var renderTexture, out var frameDescriptors))
             {
-                // Depth system is ready (we already warmed it up in Update())
-                // Just capture the frame data
 
                 const int FRAME_DESC_COUNT = 2;
 

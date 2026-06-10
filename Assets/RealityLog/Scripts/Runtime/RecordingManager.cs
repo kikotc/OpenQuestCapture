@@ -55,7 +55,7 @@ namespace RealityLog
         /// Gets the elapsed recording time in seconds.
         /// Returns 0 if not currently recording.
         /// </summary>
-        public float RecordingDuration => isRecording ? Time.time - recordingStartTime : 0f;
+        public float RecordingDuration => isRecording ? Time.unscaledTime - recordingStartTime : 0f;
 
         /// <summary>
         /// Starts recording from all subsystems in the proper order.
@@ -106,20 +106,12 @@ namespace RealityLog
                 logger.StartLogging();
             }
             
-            // Optional: Reset camera base time to sync with depth timestamps
-            // Currently commented out as both use system monotonic clock
-            // Uncomment if timestamp alignment issues occur
-            // foreach (var provider in cameraProviders)
-            // {
-            //     provider.ResetBaseTime();
-            // }
-
             // Step 3: Start synchronized capture
             // This begins the actual frame capture loop
             captureTimer.StartCapture();
 
             isRecording = true;
-            recordingStartTime = Time.time;
+            recordingStartTime = Time.unscaledTime;
 
             onRecordingStarted?.Invoke();
 
@@ -233,14 +225,12 @@ namespace RealityLog
                 return resolvedStreamSender;
             }
 
-            if (!createIfMissing)
+            if (createIfMissing)
             {
-                return null;
+                Debug.LogError($"[{Constants.LOG_TAG}] RecordingManager: No OpenQuestCaptureStreamer found in scene. Assign it in the Inspector.");
             }
 
-            var streamObject = new GameObject("OpenQuestCaptureStreamer");
-            resolvedStreamSender = streamObject.AddComponent<OpenQuestCaptureStreamer>();
-            return resolvedStreamSender;
+            return null;
         }
 
         private void OnDestroy()

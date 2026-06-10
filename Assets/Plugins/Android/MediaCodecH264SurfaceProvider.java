@@ -68,6 +68,7 @@ public class MediaCodecH264SurfaceProvider implements ISurfaceProvider {
     /** Discard all buffered encoded chunks. Call when streaming starts to drop stale frames. */
     public void flushQueue() {
         chunkQueue.clear();
+        lastQueuedFrameUs = Long.MIN_VALUE;
     }
 
     public void close() {
