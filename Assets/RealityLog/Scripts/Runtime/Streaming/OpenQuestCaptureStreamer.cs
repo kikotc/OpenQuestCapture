@@ -6,10 +6,6 @@ using UnityEngine;
 
 namespace RealityLog.Streaming
 {
-    /// <summary>
-    /// Small Unity-facing wrapper for the workstation UDP stream. Attach this to a scene object
-    /// to smoke-test the existing QuestStreamer receiver before wiring camera/depth payloads.
-    /// </summary>
     public class OpenQuestCaptureStreamer : MonoBehaviour
     {
         private const ulong DefaultOpenXrPoseLocationFlags = 0x0f;
@@ -25,10 +21,13 @@ namespace RealityLog.Streaming
         [Header("HMD Pose Streaming")]
         [Tooltip("Stream left camera pose derived from HMD tracking at Update rate (~50 Hz).")]
         [SerializeField] private bool streamHmdPose = true;
+        [Tooltip("Max pose packets per second sent to workstation. 0 or negative = disabled. Lower = less Hydra load.")]
+        [SerializeField] private float poseFps = 25f;
         [Tooltip("Fixed offset from HMD center to left camera in HMD local space (meters).")]
         [SerializeField] private Vector3 leftCameraExtrinsics = new Vector3(-0.032f, -0.018f, -0.062f);
 
         private QuestStreamUdpSender? sender;
+        private float _lastPoseSendTime = -1f;
 
         public bool IsStreaming => sender?.IsOpen ?? false;
 
@@ -46,31 +45,28 @@ namespace RealityLog.Streaming
 
         private void Update()
         {
-            if (!IsStreaming || !streamHmdPose)
-            {
+            if (!IsStreaming || !streamHmdPose || poseFps <= 0f)
                 return;
-            }
 
             var cam = Camera.main;
             if (cam == null)
-            {
                 return;
-            }
 
-            // HIGH-RATE POSE STREAM (~50 Hz, wall-clock timestamp)
-            // This is a second pose stream running alongside the depth-cadence pose sent by
-            // DepthMapExporter. Both use the same POSE_OPENXR_BINARY format and StreamType.Pose.
-            // The backend synchronizer uses closest-timestamp matching, so:
-            //   - depth frames will match the depth-cadence pose (exact timestamp)
-            //   - RGB frames will match whichever pose is nearest in time (likely this stream)
-            // Left camera position is derived from the HMD tracking pose plus the known
-            // physical offset. Orientation is the HMD orientation directly — the Quest 3
-            // passthrough cameras share the same optical axis as the HMD center (offset only,
-            // no rotation), so hmdRot is the correct left-camera orientation.
+            // HIGH-RATE POSE STREAM (throttled to poseFps, OVR hardware clock timestamp)
+            // Runs alongside the depth-cadence pose sent by DepthMapExporter. Both use the
+            // same POSE_OPENXR_BINARY format and StreamType.Pose. The backend synchronizer
+            // uses closest-timestamp matching so RGB frames match whichever pose is nearest.
+            // Timestamp uses OVRPlugin.GetTimeInSeconds() to stay in the same clock domain as
+            // depth and RGB frame timestamps (all use the device's monotonic hardware clock).
+            var now = Time.unscaledTime;
+            if (now - _lastPoseSendTime < 1f / poseFps)
+                return;
+            _lastPoseSendTime = now;
+
             var hmdPos = cam.transform.position;
             var hmdRot = cam.transform.rotation;
             var leftCamPos = hmdPos + hmdRot * leftCameraExtrinsics;
-            var timestampNs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000L;
+            var timestampNs = (long)(OVRPlugin.GetTimeInSeconds() * 1_000_000_000.0);
 
             SendLeftCameraPose(timestampNs, leftCamPos, hmdRot);
         }
@@ -78,9 +74,7 @@ namespace RealityLog.Streaming
         private void OnEnable()
         {
             if (startOnEnable)
-            {
                 StartStreaming();
-            }
         }
 
         private void OnDisable()
@@ -96,9 +90,7 @@ namespace RealityLog.Streaming
         public void StartStreaming()
         {
             if (IsStreaming)
-            {
                 return;
-            }
 
             if (string.IsNullOrWhiteSpace(host))
             {
@@ -112,9 +104,7 @@ namespace RealityLog.Streaming
                 Debug.Log($"[{Constants.LOG_TAG}] OpenQuestCapture UDP streamer targeting {host}:{port}");
 
                 if (sendStartupStatus)
-                {
                     SendStatus("OpenQuestCapture streamer online");
-                }
             }
             catch (Exception exception)
             {
@@ -127,9 +117,7 @@ namespace RealityLog.Streaming
         public void StopStreaming()
         {
             if (sender == null)
-            {
                 return;
-            }
 
             SendStatus("OpenQuestCapture streamer offline");
             sender.Dispose();
@@ -156,9 +144,7 @@ namespace RealityLog.Streaming
         public void SendLeftCameraPose(long timestampNs, Vector3 position, Quaternion orientation)
         {
             if (sender == null || timestampNs <= 0)
-            {
                 return;
-            }
 
             // Convert OpenXR (Y-up, Z-back) to Hydra optical convention (Y-down, Z-forward).
             // Negate Y and Z on position; negate qy and qz on quaternion.

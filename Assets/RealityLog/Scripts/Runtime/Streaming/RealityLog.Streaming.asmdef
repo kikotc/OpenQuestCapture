@@ -2,7 +2,8 @@
     "name": "RealityLog.Streaming",
     "rootNamespace": "RealityLog.Streaming",
     "references": [
-        "GUID:e144d031c3c40ef4d960edaa656bd4ca"
+        "GUID:e144d031c3c40ef4d960edaa656bd4ca",
+        "GUID:f64c9ebcd7899c3448a08dc9f9ddbe30"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

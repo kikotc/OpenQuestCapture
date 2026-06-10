@@ -91,14 +91,22 @@ namespace RealityLog.Depth
             // Note: We keep depth enabled to avoid re-initialization overhead on next recording
         }
 
+        // Single place that resolves the streamer reference. Called lazily so it catches
+        // streamers created dynamically by RecordingManager after Start() has already run.
+        private OpenQuestCaptureStreamer? ResolvePoseStreamer()
+        {
+            if (resolvedPoseStreamer != null) return resolvedPoseStreamer;
+            resolvedPoseStreamer = poseStreamer != null
+                ? poseStreamer
+                : FindObjectOfType<OpenQuestCaptureStreamer>();
+            return resolvedPoseStreamer;
+        }
+
         private void Start()
         {
-            baseOvrTimeSec = OVRPlugin.GetTimeInSeconds();
-            baseUnixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
             depthDataExtractor = new();
             renderTextureExporter = new(copyDepthMapShader);
-            resolvedPoseStreamer = poseStreamer != null ? poseStreamer : FindObjectOfType<OpenQuestCaptureStreamer>();
+            ResolvePoseStreamer();
 
             Permission.RequestUserPermission(OVRPermissionsRequester.ScenePermission);
 
@@ -207,12 +215,13 @@ namespace RealityLog.Depth
 
                 // Build depth streaming callback if streamer is active
                 Action<Unity.Collections.NativeArray<float>>? depthStreamCallback = null;
-                if (streamDepth && resolvedPoseStreamer != null && resolvedPoseStreamer.IsStreaming)
+                var activeStreamer = ResolvePoseStreamer();
+                if (streamDepth && activeStreamer != null && activeStreamer.IsStreaming)
                 {
                     var leftDesc = frameDescriptors[0];
                     var capturedWidth = width;
                     var capturedHeight = height;
-                    var capturedStreamer = resolvedPoseStreamer;
+                    var capturedStreamer = activeStreamer;
                     depthStreamCallback = (floatData) =>
                     {
                         var uint16Bytes = new byte[floatData.Length * 2];
@@ -265,14 +274,7 @@ namespace RealityLog.Depth
 
         private void SendLeftCameraPose(DepthFrameDesc frameDesc)
         {
-            if (resolvedPoseStreamer == null)
-            {
-                resolvedPoseStreamer = poseStreamer != null
-                    ? poseStreamer
-                    : FindObjectOfType<OpenQuestCaptureStreamer>();
-            }
-
-            resolvedPoseStreamer?.SendLeftCameraPose(
+            ResolvePoseStreamer()?.SendLeftCameraPose(
                 frameDesc.timestampNs,
                 frameDesc.createPoseLocation,
                 frameDesc.createPoseRotation);
