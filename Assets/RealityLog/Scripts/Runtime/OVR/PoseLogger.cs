@@ -29,7 +29,7 @@ namespace RealityLog.OVR
         [SerializeField] private string directoryName = "";
         [SerializeField] private bool startLoggingOnStart = false;
         [Header("Optional")]
-        [SerializeField] private Transform trackingSpace = default!;
+        [SerializeField] private Transform? trackingSpace = null;
 
         private CsvWriter? writer = null;
 
@@ -84,11 +84,6 @@ namespace RealityLog.OVR
 
         private void Start()
         {
-            baseOvrTimeSec = OVRPlugin.GetTimeInSeconds();
-            baseUnixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-            Debug.Log($"[Time Log] Base OVR Time (sec): {baseOvrTimeSec}, Base Unix Time (ms): {baseUnixTimeMs}");
-
             if (startLoggingOnStart)
             {
                 StartLogging();

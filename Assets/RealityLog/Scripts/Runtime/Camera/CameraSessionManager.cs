@@ -8,7 +8,7 @@ namespace RealityLog.Camera
 {
     public class CameraSessionManager : MonoBehaviour
     {
-        private const string CAMEAR_SESSION_MANAGER_CLASS_NAME = "com.samusynth.questcamera.core.CameraSessionManager";
+        private const string CAMERA_SESSION_MANAGER_CLASS_NAME = "com.samusynth.questcamera.core.CameraSessionManager";
 
         private const string REGISTER_SURFACE_PROVIDER_METHOD_NAME = "registerSurfaceProvider";
         private const string SET_CAPTURE_TEMPLATE_METHOD_NAME = "setCaptureTemplateFromString";
@@ -37,12 +37,17 @@ namespace RealityLog.Camera
             }
             else
             {
-                Instantiate(cameraManagerJavaInstance);
+                InitializeCameraSession(cameraManagerJavaInstance);
             }
         }
 
         private void OnDisable()
         {
+            if (resumeCoroutine != null)
+            {
+                StopCoroutine(resumeCoroutine);
+                resumeCoroutine = null;
+            }
             DestroyInstance();
             cameraPermissionManager.CameraManagerInstantiated -= OnCameraManagerInstantiated;
         }
@@ -77,13 +82,13 @@ namespace RealityLog.Camera
         private System.Collections.IEnumerator DelayedResume()
         {
             Debug.Log($"[{Constants.LOG_TAG}] App resuming - waiting {RESUME_DELAY}s before reopening camera...");
-            yield return new WaitForSeconds(RESUME_DELAY);
+            yield return new WaitForSecondsRealtime(RESUME_DELAY);
             
             Debug.Log($"[{Constants.LOG_TAG}] Reopening camera session");
             var cameraManagerJavaInstance = cameraPermissionManager.CameraManagerJavaInstance;
             if (cameraManagerJavaInstance != null)
             {
-                Instantiate(cameraManagerJavaInstance);
+                InitializeCameraSession(cameraManagerJavaInstance);
             }
             else
             {
@@ -96,10 +101,10 @@ namespace RealityLog.Camera
         private void OnCameraManagerInstantiated(AndroidJavaObject cameraManagerJavaInstance)
         {
             Debug.Log($"[{Constants.LOG_TAG}] OnCameraManagerInstantiated");
-            Instantiate(cameraManagerJavaInstance);
+            InitializeCameraSession(cameraManagerJavaInstance);
         }
 
-        private void Instantiate(AndroidJavaObject cameraManagerJavaInstance)
+        private void InitializeCameraSession(AndroidJavaObject cameraManagerJavaInstance)
         {
             if (SessionManagerJavaInstance != null)
                 return;
@@ -124,7 +129,7 @@ namespace RealityLog.Camera
 
             Debug.Log($"[{Constants.LOG_TAG}] {metaData}");
 
-            SessionManagerJavaInstance = new AndroidJavaObject(CAMEAR_SESSION_MANAGER_CLASS_NAME);
+            SessionManagerJavaInstance = new AndroidJavaObject(CAMERA_SESSION_MANAGER_CLASS_NAME);
 
             foreach (ISurfaceProvider provider in surfaceProviders)
             {

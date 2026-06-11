@@ -11,7 +11,6 @@ namespace RealityLog.Camera
     {
         private const string IMAGE_READER_SURFACE_PROVIDER_CLASS_NAME = "com.samusynth.questcamera.io.ImageReaderSurfaceProvider";
         
-        private const string RESET_BASE_TIME_METHOD_NAME = "resetBaseTime";
         private const string UPDATE_DIRECTORY_PATHS_METHOD_NAME = "updateDirectoryPaths";
         private const string CAPTURE_NEXT_FRAME_METHOD_NAME = "captureNextFrame";
         private const string CLOSE_METHOD_NAME = "close";
@@ -58,22 +57,9 @@ namespace RealityLog.Camera
                 bufferPoolSize
             );
 
-            Debug.Log($"[ImageReaderSurfaceProvider] Camera initialized -- will respond to capture signals from CaptureTimer");
+            Debug.Log($"[{Constants.LOG_TAG}] ImageReaderSurfaceProvider: camera initialized, will respond to CaptureTimer signals");
 
             return currentInstance;
-        }
-
-        /// <summary>
-        /// Resets the base time for camera timestamps.
-        /// Should be called when recording starts to sync with depth timestamps.
-        /// </summary>
-        public void ResetBaseTime()
-        {
-            if (currentInstance != null)
-            {
-                currentInstance.Call(RESET_BASE_TIME_METHOD_NAME);
-                Debug.Log($"[ImageReaderSurfaceProvider] Reset camera base time");
-            }
         }
 
         /// <summary>
@@ -89,7 +75,7 @@ namespace RealityLog.Camera
                 var formatInfoFilePath = Path.Join(dataDirPath, formatInfoFileName);
                 
                 currentInstance.Call(UPDATE_DIRECTORY_PATHS_METHOD_NAME, imageFileDirPath, formatInfoFilePath);
-                Debug.Log($"[ImageReaderSurfaceProvider] Updated directory paths for session: {dataDirectoryName}");
+                Debug.Log($"[{Constants.LOG_TAG}] ImageReaderSurfaceProvider: updated directory paths for session '{dataDirectoryName}'");
                 
                 // Re-write camera characteristics file to new session directory
                 if (cameraMetadata != null)
@@ -99,7 +85,7 @@ namespace RealityLog.Camera
                     try
                     {
                         File.WriteAllText(metaDataFilePath, metaDataJson);
-                        Debug.Log($"[ImageReaderSurfaceProvider] Wrote camera characteristics to: {metaDataFilePath}");
+                        Debug.Log($"[{Constants.LOG_TAG}] ImageReaderSurfaceProvider: wrote camera characteristics to '{metaDataFilePath}'");
                     }
                     catch (Exception e)
                     {
@@ -120,7 +106,7 @@ namespace RealityLog.Camera
             // This ensures camera and depth are triggered at the exact same Unity frame
             if (captureTimer.IsCapturing && captureTimer.ShouldCaptureThisFrame)
             {
-                Debug.Log($"[ImageReader] Signaling camera capture at Unity time={Time.unscaledTime:F3}s");
+                Debug.Log($"[{Constants.LOG_TAG}] ImageReaderSurfaceProvider: signaling camera capture at t={Time.unscaledTime:F3}s");
                 currentInstance.Call(CAPTURE_NEXT_FRAME_METHOD_NAME);
             }
         }
