@@ -225,12 +225,15 @@ namespace RealityLog
                 return resolvedStreamSender;
             }
 
-            if (createIfMissing)
+            if (!createIfMissing)
             {
-                Debug.LogError($"[{Constants.LOG_TAG}] RecordingManager: No OpenQuestCaptureStreamer found in scene. Assign it in the Inspector.");
+                return null;
             }
 
-            return null;
+            Debug.LogWarning($"[{Constants.LOG_TAG}] RecordingManager: No OpenQuestCaptureStreamer found — creating one with default settings. Assign it in the Inspector to avoid this.");
+            var streamObject = new GameObject("OpenQuestCaptureStreamer");
+            resolvedStreamSender = streamObject.AddComponent<OpenQuestCaptureStreamer>();
+            return resolvedStreamSender;
         }
 
         private void OnDestroy()
