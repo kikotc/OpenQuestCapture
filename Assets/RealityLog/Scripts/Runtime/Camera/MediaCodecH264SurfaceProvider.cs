@@ -74,6 +74,7 @@ namespace RealityLog.Camera
 
             if (!isStreaming) return;
 
+            javaProvider.Call("drainIntoQueue");
             bool drainedAny = false;
             while (true)
             {

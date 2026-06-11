@@ -47,7 +47,7 @@ namespace RealityLog.Common
             lastCaptureTime = Time.unscaledTime - captureInterval;
             shouldCaptureThisFrame = false; // Let Update() handle the first capture properly
             
-            Debug.Log($"[CaptureTimer] Started at {targetCaptureFPS} FPS (interval: {captureInterval}s)");
+            Debug.Log($"[{Constants.LOG_TAG}] CaptureTimer: started at {targetCaptureFPS} FPS (interval: {captureInterval}s)");
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace RealityLog.Common
             isCapturing = false;
             shouldCaptureThisFrame = false;
             
-            Debug.Log($"[CaptureTimer] Stopped");
+            Debug.Log($"[{Constants.LOG_TAG}] CaptureTimer: stopped");
         }
 
         private void Update()
@@ -76,20 +76,17 @@ namespace RealityLog.Common
                 return;
             }
 
-            // Use unscaled time for consistency
             float currentTime = Time.unscaledTime;
-            
-                // Check if enough time has passed for next capture
-                if ((currentTime - lastCaptureTime) >= captureInterval)
-                {
-                    shouldCaptureThisFrame = true;
-                    lastCaptureTime = currentTime;
-                    Debug.Log($"[CaptureTimer] Capture signal at time={currentTime:F3}s (interval={captureInterval:F3}s)");
-                }
-                else
-                {
-                    shouldCaptureThisFrame = false;
-                }
+            if ((currentTime - lastCaptureTime) >= captureInterval)
+            {
+                shouldCaptureThisFrame = true;
+                lastCaptureTime = currentTime;
+                Debug.Log($"[{Constants.LOG_TAG}] CaptureTimer: capture signal at time={currentTime:F3}s (interval={captureInterval:F3}s)");
+            }
+            else
+            {
+                shouldCaptureThisFrame = false;
+            }
         }
     }
 }

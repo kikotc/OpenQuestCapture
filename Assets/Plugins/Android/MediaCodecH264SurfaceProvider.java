@@ -59,9 +59,13 @@ public class MediaCodecH264SurfaceProvider implements ISurfaceProvider {
         return inputSurface;
     }
 
-    /** Drain pending encoded NAL units and return the oldest, or null if none available. */
-    public EncodedChunk pollEncodedChunk() {
+    /** Drain all pending encoded NAL units from the encoder into the internal queue. */
+    public void drainIntoQueue() {
         drain();
+    }
+
+    /** Return the oldest buffered chunk, or null if none. Call drainIntoQueue() first. */
+    public EncodedChunk pollEncodedChunk() {
         return chunkQueue.poll();
     }
 

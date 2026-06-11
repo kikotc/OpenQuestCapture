@@ -31,7 +31,7 @@ namespace RealityLog
         [SerializeField] private CaptureTimer captureTimer = default!;
 
         [Tooltip("Optional: Streams live sensor packets to the workstation while recording.")]
-        [SerializeField] private OpenQuestCaptureStreamer streamSender = default!;
+        [SerializeField] private OpenQuestCaptureStreamer? streamSender = null;
 
         [Header("Recording Settings")]
         [SerializeField] private bool generateTimestampedDirectories = true;
