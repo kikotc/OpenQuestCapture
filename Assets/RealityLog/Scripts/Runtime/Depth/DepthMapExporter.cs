@@ -69,7 +69,7 @@ namespace RealityLog.Depth
             baseOvrTimeSec = OVRPlugin.GetTimeInSeconds();
             baseUnixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             
-            Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter - Reset base times: OVR={baseOvrTimeSec:F3}s, Unix={baseUnixTimeMs}ms");
+            Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter: Reset base times: OVR={baseOvrTimeSec:F3}s, Unix={baseUnixTimeMs}ms");
 
             leftDepthCsvWriter = new(Path.Join(Application.persistentDataPath, DirectoryName, leftDepthDescFileName), descriptorHeader);
             rightDepthCsvWriter = new(Path.Join(Application.persistentDataPath, DirectoryName, rightDepthDescFileName), descriptorHeader);
@@ -128,7 +128,7 @@ namespace RealityLog.Depth
                     
                     // Permission granted, enable depth
                     depthDataExtractor.SetDepthEnabled(true);
-                    Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter - Scene permission granted, enabling depth system...");
+                    Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter: scene permission granted, enabling depth");
                 }
 
                 if (depthDataExtractor.TryGetUpdatedDepthTexture(out var renderTexture, out var frameDescriptors))
@@ -136,7 +136,7 @@ namespace RealityLog.Depth
                     if (renderTexture != null && renderTexture.IsCreated())
                     {
                         depthSystemReady = true;
-                        Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter - Depth system warmed up and ready!");
+                        Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter: depth system ready");
                     }
                 }
             }

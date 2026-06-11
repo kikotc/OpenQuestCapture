@@ -115,7 +115,7 @@ namespace RealityLog
 
             onRecordingStarted?.Invoke();
 
-            Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: Recording started successfully");
+            Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: recording started");
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace RealityLog
                 onRecordingSaved?.Invoke(savedDirectory);
             }
 
-            Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: Recording stopped successfully. Files saved to '{savedDirectory}'");
+            Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: recording stopped, saved to '{savedDirectory}'");
         }
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace RealityLog
                 return null;
             }
 
-            Debug.LogWarning($"[{Constants.LOG_TAG}] RecordingManager: No OpenQuestCaptureStreamer found — creating one with default settings. Assign it in the Inspector to avoid this.");
+            Debug.LogWarning($"[{Constants.LOG_TAG}] RecordingManager: no OpenQuestCaptureStreamer in scene, creating with defaults");
             var streamObject = new GameObject("OpenQuestCaptureStreamer");
             resolvedStreamSender = streamObject.AddComponent<OpenQuestCaptureStreamer>();
             return resolvedStreamSender;
