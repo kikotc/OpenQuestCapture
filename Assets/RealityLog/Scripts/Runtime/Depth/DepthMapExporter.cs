@@ -169,8 +169,6 @@ namespace RealityLog.Depth
                 return;
             }
             
-            Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter - capturing depth at Unity time={Time.unscaledTime:F3}s");
-
             if (!hasScenePermission)
             {
                 hasScenePermission = Permission.HasUserAuthorizedPermission(OVRPermissionsRequester.ScenePermission);

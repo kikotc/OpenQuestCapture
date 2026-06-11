@@ -106,7 +106,6 @@ namespace RealityLog.Camera
             // This ensures camera and depth are triggered at the exact same Unity frame
             if (captureTimer.IsCapturing && captureTimer.ShouldCaptureThisFrame)
             {
-                Debug.Log($"[{Constants.LOG_TAG}] ImageReaderSurfaceProvider: signaling camera capture at t={Time.unscaledTime:F3}s");
                 currentInstance.Call(CAPTURE_NEXT_FRAME_METHOD_NAME);
             }
         }

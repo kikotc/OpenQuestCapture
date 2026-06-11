@@ -81,7 +81,6 @@ namespace RealityLog.Common
             {
                 shouldCaptureThisFrame = true;
                 lastCaptureTime = currentTime;
-                Debug.Log($"[{Constants.LOG_TAG}] CaptureTimer: capture signal at time={currentTime:F3}s (interval={captureInterval:F3}s)");
             }
             else
             {

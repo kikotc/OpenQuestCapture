@@ -29,6 +29,16 @@ namespace RealityLog.Streaming
         private QuestStreamUdpSender? sender;
         private float _lastPoseSendTime = -1f;
 
+        private int _rgbFramesSent;
+        private int _posesSent;
+        private int _depthFramesSent;
+        private float _streamingStartTime;
+        private float _lastHealthLogTime;
+        private int _rgbAtLastHealth;
+        private int _posesAtLastHealth;
+        private int _depthAtLastHealth;
+        private const float HealthLogIntervalSec = 5f;
+
         public bool IsStreaming => sender?.IsOpen ?? false;
 
         public string Host
@@ -45,7 +55,29 @@ namespace RealityLog.Streaming
 
         private void Update()
         {
-            if (!IsStreaming || !streamHmdPose || poseFps <= 0f)
+            if (!IsStreaming)
+                return;
+
+            var now = Time.unscaledTime;
+
+            // Periodic health log — independent of pose streaming settings.
+            if (now - _lastHealthLogTime >= HealthLogIntervalSec)
+            {
+                var elapsed   = now - _streamingStartTime;
+                var rgbRate   = (_rgbFramesSent  - _rgbAtLastHealth)   / HealthLogIntervalSec;
+                var poseRate  = (_posesSent       - _posesAtLastHealth) / HealthLogIntervalSec;
+                var depthRate = (_depthFramesSent - _depthAtLastHealth) / HealthLogIntervalSec;
+                Debug.Log($"[{Constants.LOG_TAG}] Streaming health (+{elapsed:F0}s): " +
+                          $"RGB={rgbRate:F1}/s ({_rgbFramesSent} total)  " +
+                          $"Pose={poseRate:F1}/s ({_posesSent} total)  " +
+                          $"Depth={depthRate:F1}/s ({_depthFramesSent} total)");
+                _lastHealthLogTime = now;
+                _rgbAtLastHealth   = _rgbFramesSent;
+                _posesAtLastHealth = _posesSent;
+                _depthAtLastHealth = _depthFramesSent;
+            }
+
+            if (!streamHmdPose || poseFps <= 0f)
                 return;
 
             var cam = Camera.main;
@@ -58,7 +90,6 @@ namespace RealityLog.Streaming
             // uses closest-timestamp matching so RGB frames match whichever pose is nearest.
             // Timestamp uses OVRPlugin.GetTimeInSeconds() to stay in the same clock domain as
             // depth and RGB frame timestamps (all use the device's monotonic hardware clock).
-            var now = Time.unscaledTime;
             if (now - _lastPoseSendTime < 1f / poseFps)
                 return;
             _lastPoseSendTime = now;
@@ -101,7 +132,10 @@ namespace RealityLog.Streaming
             try
             {
                 sender = new QuestStreamUdpSender(host, port);
-                Debug.Log($"[{Constants.LOG_TAG}] OpenQuestCapture UDP streamer targeting {host}:{port}");
+                _rgbFramesSent = _posesSent = _depthFramesSent = 0;
+                _rgbAtLastHealth = _posesAtLastHealth = _depthAtLastHealth = 0;
+                _streamingStartTime = _lastHealthLogTime = Time.unscaledTime;
+                Debug.Log($"[{Constants.LOG_TAG}] OpenQuestCapture streaming started → {host}:{port}  poseFps={poseFps}");
 
                 if (sendStartupStatus)
                     SendStatus("OpenQuestCapture streamer online");
@@ -119,6 +153,9 @@ namespace RealityLog.Streaming
             if (sender == null)
                 return;
 
+            var duration = Time.unscaledTime - _streamingStartTime;
+            Debug.Log($"[{Constants.LOG_TAG}] OpenQuestCapture streaming stopped after {duration:F1}s — " +
+                      $"RGB={_rgbFramesSent}  Pose={_posesSent}  Depth={_depthFramesSent}");
             SendStatus("OpenQuestCapture streamer offline");
             sender.Dispose();
             sender = null;
@@ -132,6 +169,7 @@ namespace RealityLog.Streaming
         public void SendDepthFrame(long timestampNs, byte[] payload, int width, int height)
         {
             if (sender == null) return;
+            _depthFramesSent++;
             sender.SendPayload(
                 QuestStreamUdpSender.StreamType.Depth,
                 QuestStreamUdpSender.PayloadFormat.DepthUint16OpenXrZ,
@@ -145,6 +183,7 @@ namespace RealityLog.Streaming
         {
             if (sender == null || timestampNs <= 0)
                 return;
+            _posesSent++;
 
             // Convert OpenXR (Y-up, Z-back) to Hydra optical convention (Y-down, Z-forward).
             // Negate Y and Z on position; negate qy and qz on quaternion.
@@ -163,6 +202,7 @@ namespace RealityLog.Streaming
         public void SendRgbFrame(long timestampNs, byte[] nalData, int width, int height)
         {
             if (sender == null || nalData == null || nalData.Length == 0) return;
+            _rgbFramesSent++;
 
             sender.SendPayload(
                 QuestStreamUdpSender.StreamType.Camera,
