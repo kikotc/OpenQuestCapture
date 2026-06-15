@@ -26,7 +26,7 @@ using UnityEngine.XR.ARSubsystems;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
 using UnityEngine.XR.OpenXR.API;
-using RealityLog.Common;
+using RealityLogCommon = RealityLog.Common.Constants;
 
 namespace RealityLog.Depth
 {
@@ -55,7 +55,7 @@ namespace RealityLog.Depth
 
             if (occlusionSubsystem == null)
             {
-                Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: XROcclusionSubsystem not found. Enable Meta Quest: Occlusion in Project Settings.");
+                Debug.LogError($"[{RealityLogCommon.LOG_TAG}] DepthDataExtractor: XROcclusionSubsystem not found. Enable Meta Quest: Occlusion in Project Settings.");
             }
         }
 
@@ -102,7 +102,7 @@ namespace RealityLog.Depth
             {
                 if (!occlusionSubsystem.TryGetSwapchainTextureDescriptors(out var swapchains))
                 {
-                    Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: failed to get swapchain descriptors.");
+                    Debug.LogError($"[{RealityLogCommon.LOG_TAG}] DepthDataExtractor: failed to get swapchain descriptors.");
                     return false;
                 }
 
@@ -117,7 +117,7 @@ namespace RealityLog.Depth
 
                     if (!UnityXRDisplay.CreateTexture(ToUnityXRRenderTextureDesc(desc), out var textureId))
                     {
-                        Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: failed to create depth texture.");
+                        Debug.LogError($"[{RealityLogCommon.LOG_TAG}] DepthDataExtractor: failed to create depth texture.");
                         continue;
                     }
 
@@ -143,7 +143,7 @@ namespace RealityLog.Depth
 
             if (!depthTextures.TryGetValue(nativeTexture, out var textureData))
             {
-                Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: unknown native texture received.");
+                Debug.LogError($"[{RealityLogCommon.LOG_TAG}] DepthDataExtractor: unknown native texture received.");
                 return false;
             }
 
@@ -154,7 +154,7 @@ namespace RealityLog.Depth
                 _depthTexture = displaySubsystem.GetRenderTexture(textureData.textureId);
                 if (_depthTexture == null)
                 {
-                    Debug.LogWarning($"[{Constants.LOG_TAG}] DepthDataExtractor: GetRenderTexture returned null.");
+                    Debug.LogWarning($"[{RealityLogCommon.LOG_TAG}] DepthDataExtractor: GetRenderTexture returned null.");
                     return false;
                 }
                 depthTextures[nativeTexture] = (textureData.textureId, _depthTexture);
@@ -207,7 +207,7 @@ namespace RealityLog.Depth
                 case TextureFormat.RHalf:
                     return UnityXRDepthTextureFormat.kUnityXRDepthTextureFormat16bit;
                 default:
-                    Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: unsupported depth texture format {format}, defaulting to 24bit");
+                    Debug.LogError($"[{RealityLogCommon.LOG_TAG}] DepthDataExtractor: unsupported depth texture format {format}, defaulting to 24bit");
                     return UnityXRDepthTextureFormat.kUnityXRDepthTextureFormat24bitOrGreater;
             }
         }
