@@ -25,15 +25,11 @@ namespace RealityLog.Depth
         [SerializeField] private float minRaycastDistance = 0.25f;
         [SerializeField] private float raycastDistance = 10f;
         [SerializeField] private bool showDebugLines = true;
-        [SerializeField] private CaptureTimer captureTimer;
-        [SerializeField] private EnvironmentRaycastManager environmentRaycastManager;
-        [SerializeField] private Transform trackingSpace;
-        [SerializeField] private Camera camera;
-        [SerializeField] private ParticleSystem pointCloudParticleSystem;
+        [SerializeField] private CaptureTimer captureTimer = default!;
+        [SerializeField] private EnvironmentRaycastManager environmentRaycastManager = default!;
+        [SerializeField] private Camera camera = default!;
+        [SerializeField] private ParticleSystem pointCloudParticleSystem = default!;
 
-        private int hitCount = 0;
-        private int totalRaycastCount = 0;
-        
         private void Start()
         {
             Debug.Log($"[{Constants.LOG_TAG}] DepthPointCloudRenderer - Started at {captureTimer.TargetCaptureFPS} FPS");
@@ -73,44 +69,24 @@ namespace RealityLog.Depth
                 return;
             }
 
-            hitCount = 0;
-            totalRaycastCount = 0;
-
-            Debug.Log($"[{Constants.LOG_TAG}] DepthPointCloudRenderer - Casting {gridWidth * gridHeight} rays...");
-
-            
             for (int y = 0; y < gridHeight; y++)
             {
                 for (int x = 0; x < gridWidth; x++)
                 {
-                    // Generate grid position in viewport space (0 to 1)
                     float u = (x + 0.5f) / gridWidth;
                     float v = (y + 0.5f) / gridHeight;
-                    
-                    // Convert to world space ray
                     Ray ray = camera.ViewportPointToRay(new Vector3(u, v, 0f));
 
-                    totalRaycastCount++;
-                    
-                    // Raycast against live depth buffer
                     // TODO: Since we already have the depth buffer, we could use it directly instead of raycasting
                     if (environmentRaycastManager.Raycast(ray, out EnvironmentRaycastHit hit, raycastDistance))
                     {
                         float distance = Vector3.Distance(camera.transform.position, hit.point);
-                        
-                        // Filter out hits that are too close (likely invalid depth or near plane)
+
                         if (distance < minRaycastDistance)
                         {
                             continue;
                         }
 
-                        hitCount++;
-
-                        if (showDebugLines && x == gridWidth / 2 && y == gridHeight / 2)
-                        {
-                            Debug.Log($"[{Constants.LOG_TAG}] Depth Hit - Dist: {distance:F2}m, Pos: {hit.point}");
-                            Debug.Log($"[{Constants.LOG_TAG}] Camera Pos: {camera.transform.position}");
-                        }
                         Color pointColor = GetColorFromSurfaceNormal(hit.point, camera.transform.position, hit.normal);
                         
                         // Emit particle

@@ -334,27 +334,6 @@ namespace RealityLog.FileOperations
             public Exception? Exception;
         }
 
-        // Keeping synchronous methods for compatibility if needed, or we can remove them.
-        // The user asked to "compress and export in a coroutine", implying replacement or addition.
-        // I will remove the old synchronous bodies to avoid confusion, or redirect them.
-        // For now, I have replaced them in the file content range.
-
-        /// <summary>
-        /// Compresses a recording directory into a ZIP file.
-        /// </summary>
-        public void CompressRecording(string directoryName)
-        {
-           CompressRecordingAsync(directoryName);
-        }
-
-        /// <summary>
-        /// Exports a recording by compressing it and moving the ZIP to Downloads.
-        /// </summary>
-        public void ExportRecording(string directoryName)
-        {
-            ExportRecordingAsync(directoryName);
-        }
-
         /// <summary>
         /// Gets the Downloads folder path for the current platform.
         /// </summary>

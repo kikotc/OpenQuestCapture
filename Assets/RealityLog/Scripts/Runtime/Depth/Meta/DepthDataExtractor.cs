@@ -26,6 +26,7 @@ using UnityEngine.XR.ARSubsystems;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
 using UnityEngine.XR.OpenXR.API;
+using RealityLog.Common;
 
 namespace RealityLog.Depth
 {
@@ -198,12 +199,17 @@ namespace RealityLog.Depth
 
         private static UnityXRDepthTextureFormat ToUnityXRDepthTextureFormat(TextureFormat format)
         {
-            return format switch
+            switch (format)
             {
-                TextureFormat.RFloat => UnityXRDepthTextureFormat.kUnityXRDepthTextureFormat24bitOrGreater,
-                TextureFormat.R16 or TextureFormat.RHalf => UnityXRDepthTextureFormat.kUnityXRDepthTextureFormat16bit,
-                _ => throw new NotSupportedException($"Unsupported texture format: {format}")
-            };
+                case TextureFormat.RFloat:
+                    return UnityXRDepthTextureFormat.kUnityXRDepthTextureFormat24bitOrGreater;
+                case TextureFormat.R16:
+                case TextureFormat.RHalf:
+                    return UnityXRDepthTextureFormat.kUnityXRDepthTextureFormat16bit;
+                default:
+                    Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: unsupported depth texture format {format}, defaulting to 24bit");
+                    return UnityXRDepthTextureFormat.kUnityXRDepthTextureFormat24bitOrGreater;
+            }
         }
     }
 }

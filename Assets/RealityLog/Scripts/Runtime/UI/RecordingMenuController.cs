@@ -16,7 +16,7 @@ namespace RealityLog.UI
         [SerializeField] private GameObject menuPanel = default!;
 
         [Tooltip("WorldSpaceMenuPositioner component to position menu in front of player when opened")]
-        [SerializeField] private WorldSpaceMenuPositioner? menuPositioner = default!;
+        [SerializeField] private WorldSpaceMenuPositioner? menuPositioner = null;
 
         [Header("Input Settings")]
         [Tooltip("Button to toggle menu (Y button on Quest controllers)")]

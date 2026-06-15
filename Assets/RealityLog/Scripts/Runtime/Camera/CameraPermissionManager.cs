@@ -11,7 +11,7 @@ namespace RealityLog.Camera
     {
         private const float CAMERA_MANAGER_CHECK_INTERVAL = 0.1f;
 
-        private const string CAMEAR_PERMISSION_MANAGER_CLASS_NAME = "com.samusynth.questcamera.core.CameraPermissionManager";
+        private const string CAMERA_PERMISSION_MANAGER_CLASS_NAME = "com.samusynth.questcamera.core.CameraPermissionManager";
 
         private const string REQUEST_CAMERA_PERMISSION_METHOD_NAME = "requestCameraPermissionIfNeeded";
         private const string HAS_CAMERA_MANAGER_METHOD_NAME = "hasCameraManager";
@@ -74,7 +74,7 @@ namespace RealityLog.Camera
             using (AndroidJavaClass unityPlayerClazz = new AndroidJavaClass(Constants.UNITY_PLAYER_CLASS_NAME))
             using (AndroidJavaObject currentActivity = unityPlayerClazz.GetStatic<AndroidJavaObject>(Constants.UNITY_PLAYER_CURRENT_ACTIVITY_VARIABLE_NAME))
             {
-                JavaInstance = new AndroidJavaObject(CAMEAR_PERMISSION_MANAGER_CLASS_NAME, currentActivity);
+                JavaInstance = new AndroidJavaObject(CAMERA_PERMISSION_MANAGER_CLASS_NAME, currentActivity);
                 JavaInstance.Call(REQUEST_CAMERA_PERMISSION_METHOD_NAME);
 
                 StartCoroutine(CheckCameraManagerCoroutine());
@@ -108,7 +108,7 @@ namespace RealityLog.Camera
                     yield break;
                 }
 
-                yield return new WaitForSeconds(CAMERA_MANAGER_CHECK_INTERVAL);
+                yield return new WaitForSecondsRealtime(CAMERA_MANAGER_CHECK_INTERVAL);
             }
         }
 # endif        

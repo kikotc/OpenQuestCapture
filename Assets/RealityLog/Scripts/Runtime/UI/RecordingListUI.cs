@@ -151,7 +151,7 @@ namespace RealityLog.UI
         {
             if (operations != null)
             {
-                operations.ExportRecording(directoryName);
+                operations.ExportRecordingAsync(directoryName);
             }
         }
 
