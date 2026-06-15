@@ -51,6 +51,7 @@ This includes:
   * Visualizes depth coverage using a particle system.
   * **Color-coded feedback**: Different colors indicate different angles at which the point was captured. White indicates head-on coverage, while vivid colors indicate grazing angles.
 * Automatically organizes logs into timestamped folders on internal storage
+* **Live UDP Streaming**: streams H264 RGB frames, HMD poses, and depth maps in real-time to a workstation receiver over WiFi
 
 
 ### Quick Start Guide
@@ -261,6 +262,49 @@ yuv_to_rgb:
 Then run the pipeline as normal. The tone mapping will be applied automatically when converting YUV images to RGB.
 
 For more details and advanced options, see the full documentation in the [quest-3d-reconstruction README](https://github.com/samuelm2/quest-3d-reconstruction#-tone-mapping-for-high-dynamic-range-scenes).
+
+---
+
+## 📡 Live Streaming
+
+The app can stream sensor data in real-time over UDP to a workstation while recording.
+
+### What gets streamed
+
+| Stream | Format | Notes |
+|--------|--------|-------|
+| RGB frames | H264 IDR-only, SPS+PPS prepended | Hardware-encoded on Qualcomm XR2, independently decodable |
+| HMD pose | OpenXR binary (left camera) | Throttled to configurable FPS (default 25 Hz) |
+| Depth frames | uint16 OpenXR window-depth | Left eye only |
+
+All packets use the QSTR protocol (48-byte header, magic `0x52545351`) over UDP.
+
+### Setup
+
+Add an `OpenQuestCaptureStreamer` component to a GameObject in your scene and configure:
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `host` | `10.0.1.160` | Workstation IP address |
+| `port` | `48002` | UDP port |
+| `poseFps` | `25` | Max pose packets per second |
+| `streamHmdPose` | `true` | Enable HMD pose stream |
+
+Wire the component to `RecordingManager.streamSender`. If left unwired, a default instance is created automatically when recording starts (using the default host/port).
+
+Streaming starts automatically when recording starts (`streamWhileRecording = true` on `RecordingManager`).
+
+### Debugging
+
+```bash
+adb logcat | grep RealityLog
+```
+
+Key log lines to watch:
+- `OpenQuestCapture streaming started` — streamer online, shows host:port and poseFps
+- `Streaming health (+5s): RGB=4.8/s ... Pose=24.9/s ... Depth=0.9/s` — emitted every 5s
+- `MediaCodecH264SurfaceProvider: sent RGB frame #1` — first frame leaving the device
+- `OpenQuestCapture streaming stopped after 42.3s — RGB=203 Pose=1047 Depth=12` — summary on stop
 
 ---
 
