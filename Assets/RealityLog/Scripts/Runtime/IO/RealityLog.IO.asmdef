@@ -1,7 +1,9 @@
 {
     "name": "RealityLog.IO",
     "rootNamespace": "RealityLog.IO",
-    "references": [],
+    "references": [
+        "GUID:e144d031c3c40ef4d960edaa656bd4ca"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
