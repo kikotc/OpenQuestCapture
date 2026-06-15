@@ -34,7 +34,7 @@ namespace RealityLog.IO
         private void WriteLoop()
         {
             var directoryName = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(_filePath))
+            if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
             {
                 Directory.CreateDirectory(directoryName);
             }

@@ -67,6 +67,7 @@ namespace RealityLog.Camera
             if (isStreaming && !_wasStreaming)
             {
                 javaProvider.Call("flushQueue");
+                _framesSent = 0;
                 _noOutputLogCount = 0;
                 Debug.Log($"[{Constants.LOG_TAG}] MediaCodecH264SurfaceProvider: flushed stale encoder queue on streaming start");
             }

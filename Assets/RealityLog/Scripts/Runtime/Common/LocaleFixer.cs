@@ -11,7 +11,7 @@ namespace RealityLog.Common
             CultureInfo.DefaultThreadCurrentCulture = culture;
             CultureInfo.DefaultThreadCurrentUICulture = culture;
 
-            Debug.Log($"[Locale] Fixed culture: {CultureInfo.CurrentCulture.Name}");
+            Debug.Log($"[{Constants.LOG_TAG}] LocaleFixer: culture set to {CultureInfo.CurrentCulture.Name}");
         }
     }
 }

@@ -158,7 +158,18 @@ namespace RealityLog.Streaming
                     Buffer.BlockCopy(payload, offset, datagram, HeaderBytes, bytesThisFragment);
                 }
 
-                client.Send(datagram, datagram.Length, endpoint);
+                try
+                {
+                    client.Send(datagram, datagram.Length, endpoint);
+                }
+                catch (SocketException)
+                {
+                    // UDP send failed (e.g. network unavailable). Drop the packet silently.
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
             }
         }
 

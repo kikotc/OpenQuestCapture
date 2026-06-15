@@ -264,8 +264,6 @@ namespace RealityLog.Depth
                         rightDepthCsvWriter?.EnqueueRow(row);
                     }
                 }
-            } else {
-                Debug.LogError("Failed to get updated depth texture.");
             }
         }
 
