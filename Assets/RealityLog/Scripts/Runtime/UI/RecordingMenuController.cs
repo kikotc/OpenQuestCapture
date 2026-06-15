@@ -131,8 +131,6 @@ namespace RealityLog.UI
         {
             if (menuPanel == null)
                 Debug.LogWarning($"[{Constants.LOG_TAG}] RecordingMenuController: Missing menu panel GameObject reference!");
-            if (menuPositioner == null)
-                Debug.LogWarning($"[{Constants.LOG_TAG}] RecordingMenuController: Missing menu positioner reference!");
         }
     }
 }

@@ -64,8 +64,6 @@ namespace RealityLog.Depth
             leftDepthCsvWriter?.Dispose();
             rightDepthCsvWriter?.Dispose();
 
-            // Reset base times when starting a new recording session
-            // This ensures timestamps align with camera/pose data
             baseOvrTimeSec = OVRPlugin.GetTimeInSeconds();
             baseUnixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             
@@ -80,9 +78,6 @@ namespace RealityLog.Depth
 
         public void StopExport()
         {
-            // Note: Timer stop is handled by RecordingManager
-            // Just cleanup our resources here
-
             leftDepthCsvWriter?.Dispose();
             leftDepthCsvWriter = null;
             rightDepthCsvWriter?.Dispose();
@@ -110,23 +105,19 @@ namespace RealityLog.Depth
 
             Permission.RequestUserPermission(OVRPermissionsRequester.ScenePermission);
 
-            // Note: We do NOT enable depth here anymore. We wait for permission in Update().
             Application.onBeforeRender += OnBeforeRender;
         }
 
         private void Update()
         {
-            // Try to "prime" the depth system by fetching one frame at startup
-            // Once we get a valid frame, mark the system as ready and stop trying
+            // prime the depth system — once a valid frame arrives, mark ready and stop polling
             if (!depthSystemReady && depthDataExtractor != null)
             {
-                // Check for permission first
                 if (!hasScenePermission)
                 {
                     hasScenePermission = Permission.HasUserAuthorizedPermission(OVRPermissionsRequester.ScenePermission);
-                    if (!hasScenePermission) return; // Wait for permission
-                    
-                    // Permission granted, enable depth
+                    if (!hasScenePermission) return;
+
                     depthDataExtractor.SetDepthEnabled(true);
                     Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter: scene permission granted, enabling depth");
                 }
@@ -144,7 +135,6 @@ namespace RealityLog.Depth
 
         private void OnDestroy()
         {
-            // Clean up depth system
             depthDataExtractor?.SetDepthEnabled(false);
             
             renderTextureExporter?.Dispose();
@@ -155,15 +145,12 @@ namespace RealityLog.Depth
 
         private void OnBeforeRender()
         {
-            // Early exit if resources not ready
             if (renderTextureExporter == null || depthDataExtractor == null
                 || leftDepthCsvWriter == null || rightDepthCsvWriter == null)
             {
                 return;
             }
 
-            // Check if timer says we should capture this frame
-            // Timer handles FPS timing internally
             if (!captureTimer.IsCapturing || !captureTimer.ShouldCaptureThisFrame)
             {
                 return;
@@ -187,20 +174,19 @@ namespace RealityLog.Depth
 
             if (depthDataExtractor.TryGetUpdatedDepthTexture(out var renderTexture, out var frameDescriptors))
             {
-
                 const int FRAME_DESC_COUNT = 2;
 
                 if (renderTexture == null || !renderTexture.IsCreated())
                 {
-                    Debug.LogError("RenderTexture is not created or null.");
+                    Debug.LogError($"[{Constants.LOG_TAG}] DepthMapExporter: RenderTexture is null or not created.");
                     return;
                 }
 
                 if (frameDescriptors.Length != FRAME_DESC_COUNT)
-                    {
-                        Debug.LogError("Expected exactly two depth frame descriptors (left and right).");
-                        return;
-                    }
+                {
+                    Debug.LogError($"[{Constants.LOG_TAG}] DepthMapExporter: expected 2 depth frame descriptors, got {frameDescriptors.Length}.");
+                    return;
+                }
 
                 var width = renderTexture.width;
                 var height = renderTexture.height;
@@ -379,12 +365,12 @@ namespace RealityLog.Depth
                 var shader = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(COPY_DEPTH_MAP_SHADER_PATH);
                 if (shader == null)
                 {
-                    Debug.LogError($"Failed to load ComputeShader at path: {COPY_DEPTH_MAP_SHADER_PATH}");
+                    Debug.LogError($"[{Constants.LOG_TAG}] DepthMapExporter: failed to load ComputeShader at {COPY_DEPTH_MAP_SHADER_PATH}");
                 }
                 else
                 {
                     copyDepthMapShader = shader;
-                    Debug.Log($"Successfully loaded ComputeShader: {COPY_DEPTH_MAP_SHADER_PATH}");
+                    Debug.Log($"[{Constants.LOG_TAG}] DepthMapExporter: loaded ComputeShader from {COPY_DEPTH_MAP_SHADER_PATH}");
                 }
             }
         }

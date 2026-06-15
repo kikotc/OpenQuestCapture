@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
+using RealityLog.Common;
 
 namespace RealityLog.IO
 {
@@ -30,13 +31,13 @@ namespace RealityLog.IO
         {
             if (isDisposed)
             {
-                Debug.LogError("RenderTextureExporter has been disposed.");
+                Debug.LogError($"[{Constants.LOG_TAG}] DepthRenderTextureExporter: exporter has been disposed.");
                 return;
             }
 
             if (sourceRT == null || !sourceRT.IsCreated())
             {
-                Debug.LogError("RenderTexture is not created or null.");
+                Debug.LogError($"[{Constants.LOG_TAG}] DepthRenderTextureExporter: source RenderTexture is null or not created.");
                 return;
             }
 
@@ -122,7 +123,7 @@ namespace RealityLog.IO
             {
                 if (request.hasError)
                 {
-                    Debug.LogError("AsyncGPUReadback failed.");
+                    Debug.LogError($"[{Constants.LOG_TAG}] DepthRenderTextureExporter: AsyncGPUReadback failed.");
                     ReturnBuffer(buffer);
                     return;
                 }
@@ -149,7 +150,7 @@ namespace RealityLog.IO
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Failed to save raw data: {ex}");
+                    Debug.LogError($"[{Constants.LOG_TAG}] DepthRenderTextureExporter: failed to save raw data: {ex}");
                 }
                 finally
                 {

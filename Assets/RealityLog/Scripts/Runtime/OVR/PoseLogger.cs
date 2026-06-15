@@ -50,8 +50,6 @@ namespace RealityLog.OVR
             {
                 StopLogging();
                 
-                // Reset base times when starting a new recording session
-                // This ensures timestamps align with camera/depth that also reset on session start
                 baseOvrTimeSec = OVRPlugin.GetTimeInSeconds();
                 baseUnixTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 latestTimestamp = 0;

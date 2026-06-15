@@ -63,10 +63,11 @@ namespace RealityLog.Streaming
             // Periodic health log — independent of pose streaming settings.
             if (now - _lastHealthLogTime >= HealthLogIntervalSec)
             {
-                var elapsed   = now - _streamingStartTime;
-                var rgbRate   = (_rgbFramesSent  - _rgbAtLastHealth)   / HealthLogIntervalSec;
-                var poseRate  = (_posesSent       - _posesAtLastHealth) / HealthLogIntervalSec;
-                var depthRate = (_depthFramesSent - _depthAtLastHealth) / HealthLogIntervalSec;
+                var elapsed      = now - _streamingStartTime;
+                var intervalSec  = now - _lastHealthLogTime;
+                var rgbRate   = (_rgbFramesSent  - _rgbAtLastHealth)   / intervalSec;
+                var poseRate  = (_posesSent       - _posesAtLastHealth) / intervalSec;
+                var depthRate = (_depthFramesSent - _depthAtLastHealth) / intervalSec;
                 Debug.Log($"[{Constants.LOG_TAG}] Streaming health (+{elapsed:F0}s): " +
                           $"RGB={rgbRate:F1}/s ({_rgbFramesSent} total)  " +
                           $"Pose={poseRate:F1}/s ({_posesSent} total)  " +
@@ -84,12 +85,7 @@ namespace RealityLog.Streaming
             if (cam == null)
                 return;
 
-            // HIGH-RATE POSE STREAM (throttled to poseFps, OVR hardware clock timestamp)
-            // Runs alongside the depth-cadence pose sent by DepthMapExporter. Both use the
-            // same POSE_OPENXR_BINARY format and StreamType.Pose. The backend synchronizer
-            // uses closest-timestamp matching so RGB frames match whichever pose is nearest.
-            // Timestamp uses OVRPlugin.GetTimeInSeconds() to stay in the same clock domain as
-            // depth and RGB frame timestamps (all use the device's monotonic hardware clock).
+            // OVRPlugin.GetTimeInSeconds() keeps this in the same monotonic clock domain as depth/RGB timestamps.
             if (now - _lastPoseSendTime < 1f / poseFps)
                 return;
             _lastPoseSendTime = now;

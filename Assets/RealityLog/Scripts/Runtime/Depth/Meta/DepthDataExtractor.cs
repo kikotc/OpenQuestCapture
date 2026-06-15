@@ -55,7 +55,7 @@ namespace RealityLog.Depth
 
             if (occlusionSubsystem == null)
             {
-                Debug.LogError("XROcclusionSubsystem not found. Enable Meta Quest: Occlusion in Project Settings.");
+                Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: XROcclusionSubsystem not found. Enable Meta Quest: Occlusion in Project Settings.");
             }
         }
 
@@ -102,7 +102,7 @@ namespace RealityLog.Depth
             {
                 if (!occlusionSubsystem.TryGetSwapchainTextureDescriptors(out var swapchains))
                 {
-                    Debug.LogError("Failed to get swapchain descriptors.");
+                    Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: failed to get swapchain descriptors.");
                     return false;
                 }
 
@@ -117,7 +117,7 @@ namespace RealityLog.Depth
 
                     if (!UnityXRDisplay.CreateTexture(ToUnityXRRenderTextureDesc(desc), out var textureId))
                     {
-                        Debug.LogError("Failed to create texture.");
+                        Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: failed to create depth texture.");
                         continue;
                     }
 
@@ -143,7 +143,7 @@ namespace RealityLog.Depth
 
             if (!depthTextures.TryGetValue(nativeTexture, out var textureData))
             {
-                Debug.LogError("Unknown native texture received.");
+                Debug.LogError($"[{Constants.LOG_TAG}] DepthDataExtractor: unknown native texture received.");
                 return false;
             }
 
@@ -154,7 +154,7 @@ namespace RealityLog.Depth
                 _depthTexture = displaySubsystem.GetRenderTexture(textureData.textureId);
                 if (_depthTexture == null)
                 {
-                    Debug.Log("GetRenderTexture failed.");
+                    Debug.LogWarning($"[{Constants.LOG_TAG}] DepthDataExtractor: GetRenderTexture returned null.");
                     return false;
                 }
                 depthTextures[nativeTexture] = (textureData.textureId, _depthTexture);

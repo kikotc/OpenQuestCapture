@@ -37,8 +37,7 @@ namespace RealityLog.Camera
         {
             Close();
 
-            // Store metadata for writing when recording starts (via UpdateDirectoryPaths)
-            // Don't write here because dataDirectoryName might be empty/default at app startup
+            // stored here but not written — dataDirectoryName may be empty at startup
             cameraMetadata = metadata;
 
             var dataDirPath = Path.Join(Application.persistentDataPath, dataDirectoryName);
@@ -62,10 +61,6 @@ namespace RealityLog.Camera
             return currentInstance;
         }
 
-        /// <summary>
-        /// Updates the directory paths for a new recording session.
-        /// Must be called before starting capture to ensure files are written to the correct location.
-        /// </summary>
         public void UpdateDirectoryPaths()
         {
             if (currentInstance != null)
@@ -73,11 +68,10 @@ namespace RealityLog.Camera
                 var dataDirPath = Path.Join(Application.persistentDataPath, dataDirectoryName);
                 var imageFileDirPath = Path.Join(dataDirPath, imageSubdirName);
                 var formatInfoFilePath = Path.Join(dataDirPath, formatInfoFileName);
-                
+
                 currentInstance.Call(UPDATE_DIRECTORY_PATHS_METHOD_NAME, imageFileDirPath, formatInfoFilePath);
                 Debug.Log($"[{Constants.LOG_TAG}] ImageReaderSurfaceProvider: updated directory paths for session '{dataDirectoryName}'");
-                
-                // Re-write camera characteristics file to new session directory
+
                 if (cameraMetadata != null)
                 {
                     var metaDataFilePath = Path.Join(dataDirPath, cameraMetaDataFileName);
@@ -97,13 +91,10 @@ namespace RealityLog.Camera
 
         private void LateUpdate()
         {
-            // Use LateUpdate to ensure CaptureTimer's Update() has run first
-            // This guarantees we see the latest ShouldCaptureThisFrame value
+            // LateUpdate so CaptureTimer.Update() has already set ShouldCaptureThisFrame
             if (currentInstance == null || captureTimer == null)
                 return;
 
-            // Signal Java to capture next frame when timer says so
-            // This ensures camera and depth are triggered at the exact same Unity frame
             if (captureTimer.IsCapturing && captureTimer.ShouldCaptureThisFrame)
             {
                 currentInstance.Call(CAPTURE_NEXT_FRAME_METHOD_NAME);

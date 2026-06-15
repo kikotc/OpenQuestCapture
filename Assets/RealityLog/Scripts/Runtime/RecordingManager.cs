@@ -11,10 +11,6 @@ using RealityLog.Streaming;
 
 namespace RealityLog
 {
-    /// <summary>
-    /// Central coordinator for all recording subsystems.
-    /// Handles proper sequencing and lifecycle management of depth, camera, and pose recording.
-    /// </summary>
     public class RecordingManager : MonoBehaviour
     {
         [Header("Recording Components")]
@@ -51,15 +47,8 @@ namespace RealityLog
 
         public bool IsRecording => isRecording;
         
-        /// <summary>
-        /// Gets the elapsed recording time in seconds.
-        /// Returns 0 if not currently recording.
-        /// </summary>
         public float RecordingDuration => isRecording ? Time.unscaledTime - recordingStartTime : 0f;
 
-        /// <summary>
-        /// Starts recording from all subsystems in the proper order.
-        /// </summary>
         public void StartRecording()
         {
             if (isRecording)
@@ -91,23 +80,13 @@ namespace RealityLog
             Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: Starting recording session '{currentSessionDirectory}'");
             StartStreamingIfNeeded();
 
-            // Step 1: Update camera paths for new session
-            // This ensures format info and images are written to the new directory
             foreach (var provider in cameraProviders)
-            {
                 provider.UpdateDirectoryPaths();
-            }
 
-            // Step 2: Setup file writers and directories
-            // (Depth and camera systems are already initialized from app start)
             depthMapExporter.StartExport();
             foreach (var logger in poseLoggers)
-            {
                 logger.StartLogging();
-            }
-            
-            // Step 3: Start synchronized capture
-            // This begins the actual frame capture loop
+
             captureTimer.StartCapture();
 
             isRecording = true;
@@ -118,9 +97,6 @@ namespace RealityLog
             Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: recording started");
         }
 
-        /// <summary>
-        /// Stops recording from all subsystems in the proper order.
-        /// </summary>
         public void StopRecording()
         {
             if (!isRecording)
@@ -131,26 +107,19 @@ namespace RealityLog
 
             Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: Stopping recording session");
 
-            // Stop in reverse order
-            // Step 1: Stop capture loop first
             captureTimer.StopCapture();
             StopStreamingIfNeeded();
 
-            // Step 2: Close file writers and cleanup
             depthMapExporter.StopExport();
             foreach (var logger in poseLoggers)
-            {
                 logger.StopLogging();
-            }
 
-            // Store directory name before resetting state
             string savedDirectory = currentSessionDirectory ?? string.Empty;
 
             isRecording = false;
             recordingStartTime = 0f;
             currentSessionDirectory = null;
 
-            // Invoke event after files are saved
             if (!string.IsNullOrEmpty(savedDirectory))
             {
                 onRecordingSaved?.Invoke(savedDirectory);
@@ -159,9 +128,6 @@ namespace RealityLog
             Debug.Log($"[{Constants.LOG_TAG}] RecordingManager: recording stopped, saved to '{savedDirectory}'");
         }
 
-        /// <summary>
-        /// Toggle recording on/off. Useful for UI buttons.
-        /// </summary>
         public void ToggleRecording()
         {
             if (isRecording)
@@ -172,7 +138,6 @@ namespace RealityLog
 
         private void OnValidate()
         {
-            // Validate required references in editor
             if (depthMapExporter == null)
                 Debug.LogWarning($"[{Constants.LOG_TAG}] RecordingManager: Missing DepthMapExporter reference!");
             
